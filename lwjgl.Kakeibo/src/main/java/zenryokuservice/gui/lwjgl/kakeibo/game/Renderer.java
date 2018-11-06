@@ -31,13 +31,15 @@ public class Renderer {
     public void init(Window window) throws Exception {
         // Create shader
         shaderProgram = new ShaderProgram();
-        shaderProgram.createVertexShader(Utils.loadResource("/shaders/vertex7A.vs"));
-        shaderProgram.createFragmentShader(Utils.loadResource("/shaders/fragment7A.fs"));
+        // 2018/11/06: 指定するファイル名が間違っていた。
+        shaderProgram.createVertexShader(Utils.loadResource("/shaders/vertex7B.vs"));
+        shaderProgram.createFragmentShader(Utils.loadResource("/shaders/fragment7B.fs"));
         shaderProgram.link();
         
         // Create uniforms for world and projection matrices
         shaderProgram.createUniform("projectionMatrix");
         shaderProgram.createUniform("worldMatrix");
+        shaderProgram.createUniform("texture_sampler");
     }
 
     public void clear() {
@@ -53,7 +55,6 @@ public class Renderer {
         }
 
         shaderProgram.bind();
-        
         // Update projection Matrix
         Matrix4f projectionMatrix = transformation.getProjectionMatrix(FOV, window.getWidth(), window.getHeight(), Z_NEAR, Z_FAR);
         shaderProgram.setUniform("projectionMatrix", projectionMatrix);
@@ -67,7 +68,11 @@ public class Renderer {
                     gameItem.getScale());
             shaderProgram.setUniform("worldMatrix", worldMatrix);
             // Render the mes for this game item
-            gameItem.getMesh().render();
+            if(gameItem.getMesh() != null) {
+                gameItem.getMesh().render();
+            } else {
+            	gameItem.getTexturedMesh().render();
+            }
         }
 
         shaderProgram.unbind();

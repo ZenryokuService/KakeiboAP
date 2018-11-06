@@ -6,6 +6,8 @@ import static org.lwjgl.glfw.GLFW.*;
 import java.util.ArrayList;
 
 import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.Mesh;
+import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.Texture;
+import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.TexturedMesh;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.GameItem;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.IGameLogic;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.Window;
@@ -23,6 +25,8 @@ public class DummyGame implements IGameLogic {
     private final Renderer renderer;
 
     private GameItem[] gameItems;
+    // １週間分の配列
+    private static final String[] weekTexture = new String[]{"Mon", "Tue", "Wed", "Thi", "Fri", "Sat", "Sun"};
 
     public DummyGame() {
         renderer = new Renderer();
@@ -31,9 +35,17 @@ public class DummyGame implements IGameLogic {
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
+        // Cubeの高さ
+        ArrayList<float[]> floats = new ArrayList<>();
+        floats.add(new float[] {0.0001f, 0.12f, 0.3f, 0.001f, 0.1f, 0.25f, 0.1f});
+        floats.add(new float[] {0.15f, 0.19f, 0.23f, 0.2f, 0.08f, 0.13f, 0.12f});
+        floats.add(new float[] {0.1f, 0.2f, 0.4f, 0.001f, 0.2f, 0.05f, 0.15f});
+        floats.add(new float[] {0.11f, 0.12f, 0.3f, 0.001f, 0.1f, 0.25f, 0.1f});
+        floats.add(new float[] {0.12f, 0.13f, 0.14f, 0.015f, 0.16f, 0.17f, 0.18f});
+        // Cubeの底面のサイズ(正方形)
         final float cubeSize = 0.1f;
         // x軸の初期値
-        final float xInit = -0.8f;
+        final float xInit = -0.5f;
         // y軸の初期値
         final float yInit = -0.8f;
         // z軸の初期値
@@ -45,6 +57,9 @@ public class DummyGame implements IGameLogic {
         // z軸の増減幅
         final float zWidth = 0.1f;
         ArrayList<GameItem> arr = new ArrayList<GameItem>();
+        
+        // 初めの1回目だけ曜日のテキストプレートを作成する
+        boolean isCreateTexture = false;
         // 1ヶ月分(5週間分のマスを作る)
         for(int j = 1; j <= 5; j++) {
         	// 開始点より一列文ずらす
@@ -55,9 +70,21 @@ public class DummyGame implements IGameLogic {
         	// Z軸の開始点
         	float zStart = zInit - (0.16f * j);
             // １週間分
+        	float[] weekArr = floats.get(j-1);
+        	
+        	// 1回目だけテクスチャを作成する
+        	isCreateTexture = j == 1 ? true: false;
+        	System.out.println(isCreateTexture);
             for(int i = 1; i <= 7; i++) {
-        		arr.add(createCube(
-        				cubeSize, xStart + (xWidth * i), yStart + (yWidth * i), zStart - (zWidth * i)));
+            	float xAdd = xWidth * i;
+            	float yAdd = yWidth * i;
+            	float zAdd = zWidth * i;
+            	if (isCreateTexture) {
+            		arr.add(putOnTexturePlate(xAdd, yAdd, zAdd, i-1));
+            	}
+            	float val = weekArr[i - 1];
+        		arr.add(createCube(val,
+        				cubeSize, xStart + xAdd, yStart + yAdd, zStart - zAdd));
             }
         }
         // 配列の要素数を指定する
@@ -66,22 +93,54 @@ public class DummyGame implements IGameLogic {
         gameItems = arr.toArray(items);
     }
 
+    /**
+     * Texture作成メソッド
+     * @param xPos
+     * @param yPos
+     * @param zPos
+     * @param num 曜日の番号0:月〜7:日
+     * @return GameItem
+     */
+    private GameItem putOnTexturePlate(float xPos, float yPos, float zPos, int num) {
+    	float[] positions = new float[] {-0.1f, 0.1f, 0
+    			, -0.1f, -0.1f, 0
+    			, 0.1f, 0.1f, 0
+    			, -0.1f, 0.1f, 0,};
+    	float[] colours = new float[] {1, 1, 1
+    			, 1, 1, 1
+    			, 1, 1, 1
+    			, 1, 1, 1};
+    	int[] indices = new int[] {0, 1, 3, 3, 1, 2};
+    	Texture texture = null;
+
+    	try {
+        	texture = new Texture("/textures/" + weekTexture[num] +  ".png");
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    	}
+        TexturedMesh mesh = new TexturedMesh(positions, colours, indices, texture);
+        GameItem gameItem = new GameItem(mesh);
+//        gameItem.setPosition(posX, posY, posZ);
+        gameItem.setRotation(20, 30, 0);
+        return gameItem;
+    }
+    
     /* 追加したメソッドです */
-    private GameItem createCube(float cubeSize, float posX, float posY, float posZ) {
+    private GameItem createCube(float height, float cubeSize, float posX, float posY, float posZ) {
         // Create the Mesh
         float[] positions = new float[]{
             // VO
-            -1 * cubeSize,  cubeSize,  cubeSize,
+            -1 * cubeSize,  height,  cubeSize,
             // V1
             -1 * cubeSize, -1 * cubeSize,  cubeSize,
             // V2
             cubeSize, -1 * cubeSize,  cubeSize,
             // V3
-            cubeSize,  cubeSize,  cubeSize,
+            cubeSize,  height,  cubeSize,
             // V4
-            -1 * cubeSize,  cubeSize, -1 * cubeSize,
+            -1 * cubeSize,  height, -1 * cubeSize,
             // V5
-            cubeSize,  cubeSize, -1 * cubeSize,
+            cubeSize,  height, -1 * cubeSize,
             // V6
             -1 * cubeSize, -1 * cubeSize, -1 * cubeSize,
             // V7
@@ -231,7 +290,11 @@ public class DummyGame implements IGameLogic {
     public void cleanup() {
         renderer.cleanup();
         for (GameItem gameItem : gameItems) {
-            gameItem.getMesh().cleanUp();
+        	if (gameItem.getMesh() != null) {
+        		gameItem.getMesh().cleanUp();
+        	} else {
+        		gameItem.getTexturedMesh().cleanUp();
+        	}
         }
     }
 

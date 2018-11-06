@@ -3,16 +3,30 @@ package zenryokuservice.gui.lwjgl.kakeibo.engine;
 import org.joml.Vector3f;
 
 import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.Mesh;
+import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.TexturedMesh;
 
 public class GameItem {
 
-    private final Mesh mesh;
+	private Mesh mesh;
+	
+    private TexturedMesh txtMesh;
     
     private final Vector3f position;
     
     private float scale;
 
     private final Vector3f rotation;
+
+    /**
+     * テクスチャを使用するMesh用のコンストラクタ
+     * @param mesh
+     */
+    public GameItem(TexturedMesh mesh) {
+        this.txtMesh = mesh;
+        position = new Vector3f(0, 0, 0);
+        scale = 1;
+        rotation = new Vector3f(0, 0, 0);
+    }
 
     public GameItem(Mesh mesh) {
         this.mesh = mesh;
@@ -52,4 +66,9 @@ public class GameItem {
     public Mesh getMesh() {
         return mesh;
     }
+
+    public TexturedMesh getTexturedMesh() {
+        return txtMesh;
+    }
+
 }
