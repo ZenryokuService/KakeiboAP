@@ -23,6 +23,7 @@ public class GameItem {
      */
     public GameItem(TexturedMesh mesh) {
         this.txtMesh = mesh;
+        this.mesh = null;
         position = new Vector3f(0, 0, 0);
         scale = 1;
         rotation = new Vector3f(0, 0, 0);
@@ -30,6 +31,7 @@ public class GameItem {
 
     public GameItem(Mesh mesh) {
         this.mesh = mesh;
+        this.txtMesh = null;
         position = new Vector3f(0, 0, 0);
         scale = 1;
         rotation = new Vector3f(0, 0, 0);

@@ -71,7 +71,7 @@ public class Renderer {
             if(gameItem.getMesh() != null) {
                 gameItem.getMesh().render();
             } else {
-            	gameItem.getTexturedMesh().render();
+                gameItem.getTexturedMesh().render();
             }
         }
 

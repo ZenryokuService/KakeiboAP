@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.Mesh;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.Texture;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.graph.TexturedMesh;
+import zenryokuservice.gui.lwjgl.kakeibo.util.CalendarPosit;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.GameItem;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.IGameLogic;
 import zenryokuservice.gui.lwjgl.kakeibo.engine.Window;
@@ -25,8 +26,15 @@ public class DummyGame implements IGameLogic {
     private final Renderer renderer;
 
     private GameItem[] gameItems;
-    // １週間分の配列
-    private static final String[] weekTexture = new String[]{"Mon", "Tue", "Wed", "Thi", "Fri", "Sat", "Sun"};
+    /**
+     *  曜日の表示順
+     *  true: 月曜始まり false: 日曜始まり
+     */
+    private boolean isStartMon;
+    /** 日曜始まり１週間分の配列 */
+    private static final String[] WEEK_TEXTURE_SUN = new String[]{"Sun", "Mon", "Tue", "Wed", "Thi", "Fri", "Sat"};
+    /** 月曜始まり１週間分の配列 */
+    private static final String[] WEEK_TEXTURE_MON = new String[]{"Mon", "Tue", "Wed", "Thi", "Fri", "Sat", "Sun"};
 
     public DummyGame() {
         renderer = new Renderer();
@@ -35,6 +43,12 @@ public class DummyGame implements IGameLogic {
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
+        isStartMon = false;
+        CalendarPosit pos = new CalendarPosit();
+        // 月初の曜日
+        int firstDayOfWeek = pos.getStartPoint(isStartMon);
+        // 今月の最大日数
+        int maxDayOfMonth = pos.getMaxDayOfMonth();
         // Cubeの高さ
         ArrayList<float[]> floats = new ArrayList<>();
         floats.add(new float[] {0.0001f, 0.12f, 0.3f, 0.001f, 0.1f, 0.25f, 0.1f});
@@ -42,6 +56,8 @@ public class DummyGame implements IGameLogic {
         floats.add(new float[] {0.1f, 0.2f, 0.4f, 0.001f, 0.2f, 0.05f, 0.15f});
         floats.add(new float[] {0.11f, 0.12f, 0.3f, 0.001f, 0.1f, 0.25f, 0.1f});
         floats.add(new float[] {0.12f, 0.13f, 0.14f, 0.015f, 0.16f, 0.17f, 0.18f});
+        floats.add(new float[] {0.12f, 0.13f, 0.14f, 0.015f, 0.16f, 0.17f, 0.18f});
+
         // Cubeの底面のサイズ(正方形)
         final float cubeSize = 0.1f;
         // x軸の初期値
@@ -58,11 +74,15 @@ public class DummyGame implements IGameLogic {
         final float zWidth = 0.1f;
         ArrayList<GameItem> arr = new ArrayList<GameItem>();
         
+        // マスのカウント
+        int box = 0;
+        // 日数
+        int day = 0;
         // 初めの1回目だけ曜日のテキストプレートを作成する
         boolean isCreateTexture = false;
         // 1ヶ月分(5週間分のマスを作る)
-        for(int j = 1; j <= 5; j++) {
-        	// 開始点より一列文ずらす
+        for(int j = 1; j <= 6; j++) {
+        	// 開始点より一列ずらす
         	// X軸の開始点
         	float xStart = xInit - (0.1f * j);
         	// Y軸の開始点
@@ -74,13 +94,22 @@ public class DummyGame implements IGameLogic {
         	
         	// 1回目だけテクスチャを作成する
         	isCreateTexture = j == 1 ? true: false;
-        	System.out.println(isCreateTexture);
             for(int i = 1; i <= 7; i++) {
             	float xAdd = xWidth * i;
             	float yAdd = yWidth * i;
             	float zAdd = zWidth * i;
+        		// 日付をインクリメント
+        		box++;
             	if (isCreateTexture) {
-            		arr.add(putOnTexturePlate(xAdd, yAdd, zAdd, i-1));
+            		arr.add(putOnTexturePlate(xStart + xAdd + 0.01f , yStart + yAdd - 0.03f, zStart - zAdd + 0.03f, i-1));
+            	}
+           	    if (box < firstDayOfWeek) {
+           	    	System.out.println("開始: " + firstDayOfWeek);
+            		continue;
+            	}
+           	    day++;
+            	if (day >= maxDayOfMonth) {
+            		break;
             	}
             	float val = weekArr[i - 1];
         		arr.add(createCube(val,
@@ -91,36 +120,63 @@ public class DummyGame implements IGameLogic {
         GameItem[] items = new GameItem[arr.size()];
         // 配列の取り出し
         gameItems = arr.toArray(items);
+        
+        // DEBUG
+        //debug();
     }
 
+    @Deprecated
+    private void debug() {
+    	for(GameItem item : gameItems) {
+    		System.out.println("VAO_ID: " + item.getTexturedMesh().getVaoId() + "VAO_CNT" + item.getTexturedMesh().getVertexCount());
+    	}
+    }
+    
     /**
-     * Texture作成メソッド
-     * @param xPos
-     * @param yPos
-     * @param zPos
-     * @param num 曜日の番号0:月〜7:日
-     * @return GameItem
+     * Textureをつけたメッシュの作成メソッド
+     * 
+     * @param xPos X軸のポジション(FLOAT)
+     * @param yPos Y軸のポジション(FLOAT)
+     * @param zPos Z軸のポジション(FLOAT)
+     * @param num 曜日の番号[0:月〜7:日]
+     * @return GameItem 作成したメッシュのゲーム用ラッパークラス
      */
     private GameItem putOnTexturePlate(float xPos, float yPos, float zPos, int num) {
-    	float[] positions = new float[] {-0.1f, 0.1f, 0
-    			, -0.1f, -0.1f, 0
-    			, 0.1f, 0.1f, 0
-    			, -0.1f, 0.1f, 0,};
-    	float[] colours = new float[] {1, 1, 1
-    			, 1, 1, 1
-    			, 1, 1, 1
-    			, 1, 1, 1};
-    	int[] indices = new int[] {0, 1, 3, 3, 1, 2};
+    	float size = 0.08f;
+    	float[] positions = new float[] {
+    			-1 * size, size, size, // V0
+    			-1 * size, -1 * size, size, //V1 
+    			size, -1 * size, size, // V2
+    			size, size, size, // V3
+    			
+    			-1 * size, size, -1 * size, // V4
+    			size, -1 * size, size, //V5 
+    			-1 * size, -1 * size, -1 * size, // V6
+    			size, -1 * size, -1 * size, // V7
+    			};
+    	float[] textCoords = new float[]{
+                0.0f, 0.0f, 
+                0.0f, 1.0f,
+                1.0f, 1.0f,
+                1.0f, 0.0f,
+            };
+    	int[] indices = new int[] {
+    			0, 1, 3, 3, 1, 2
+			};
     	Texture texture = null;
 
     	try {
-        	texture = new Texture("/textures/" + weekTexture[num] +  ".png");
+    		if(isStartMon) {
+    			num = num < 6 ? num + 1 : 0;
+        		texture = new Texture("/textures/" + WEEK_TEXTURE_MON[num] +  ".png");
+    		}
+    		texture = new Texture("/textures/" + WEEK_TEXTURE_SUN[num] +  ".png");
     	} catch(Exception e) {
     		e.printStackTrace();
     	}
-        TexturedMesh mesh = new TexturedMesh(positions, colours, indices, texture);
+        TexturedMesh mesh = new TexturedMesh(positions, textCoords, indices, texture);
         GameItem gameItem = new GameItem(mesh);
-//        gameItem.setPosition(posX, posY, posZ);
+        gameItem.setPosition(xPos, yPos, zPos);
         gameItem.setRotation(20, 30, 0);
         return gameItem;
     }
@@ -170,65 +226,19 @@ public class DummyGame implements IGameLogic {
             // Back face
             7, 6, 4, 7, 4, 5,
         };
-        Mesh mesh = new Mesh(positions, colours, indices);
+    	Texture texture = null;
+    	try {
+        	texture = new Texture("/textures/wood1.png");
+    	} catch(Exception e) {
+    		e.printStackTrace();
+    	}
+        TexturedMesh mesh = new TexturedMesh(positions, colours, indices, texture);
         GameItem gameItem = new GameItem(mesh);
         gameItem.setPosition(posX, posY, posZ);
         gameItem.setRotation(20, 30, 0);
         return gameItem;
     }
-    /**
-     * 元々のCubeデータの定義
-     * @return GameItem Cubeを作成する
-     */
-    private GameItem createOriginCube() {
-        // Create the Mesh
-        float[] positions = new float[]{
-            // VO
-            -0.5f,  0.5f,  0.5f,
-            // V1
-            -0.5f, -0.5f,  0.5f,
-            // V2
-             0.5f, -0.5f,  0.5f,
-            // V3
-             0.5f,  0.5f,  0.5f,
-            // V4
-            -0.5f,  0.5f, -0.5f,
-            // V5
-             0.5f,  0.5f, -0.5f,
-            // V6
-            -0.5f, -0.5f, -0.5f,
-            // V7
-             0.5f, -0.5f, -0.5f,
-        };
-        float[] colours = new float[]{
-            0.5f, 0.0f, 0.0f,
-            0.0f, 0.5f, 0.0f,
-            0.0f, 0.0f, 0.5f,
-            0.0f, 0.5f, 0.5f,
-            0.5f, 0.0f, 0.0f,
-            0.0f, 0.5f, 0.0f,
-            0.0f, 0.0f, 0.5f,
-            0.0f, 0.5f, 0.5f,
-        };
-        int[] indices = new int[]{
-            // Front face
-            0, 1, 3, 3, 1, 2,
-            // Top Face
-            4, 0, 3, 5, 4, 3,
-            // Right face
-            3, 2, 7, 5, 3, 7,
-            // Left face
-            6, 1, 0, 6, 0, 4,
-            // Bottom face
-            2, 1, 6, 2, 6, 7,
-            // Back face
-            7, 6, 4, 7, 4, 5,
-        };
-        Mesh mesh = new Mesh(positions, colours, indices);
-        GameItem gameItem = new GameItem(mesh);
-        gameItem.setPosition(0, 0, -2);
-        return gameItem;
-    }
+
     @Override
     public void input(Window window) {
         displyInc = 0;

@@ -3,6 +3,7 @@ package zenryokuservice.lwjgl.Kakeibo;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import zenryokuservice.gui.lwjgl.kakeibo.util.CalendarPosit;
 
 /**
  * Unit test for simple App.
@@ -33,6 +34,8 @@ public class AppTest
      */
     public void testApp()
     {
-        assertTrue( true );
+    	CalendarPosit pos = new CalendarPosit();
+    	int res = pos.getStartPoint(true);
+    	pos.chkWeek(res, true);
     }
 }
