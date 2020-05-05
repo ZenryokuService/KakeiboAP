@@ -1,3 +1,11 @@
+/**
+ * Copyright (c) 2012-present Lightweight Java Game Library All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * Neither the name Lightweight Java Game Library nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ */
 package zenryokuservice.gui.lwjgl.kakeibo.game;
 
 import org.joml.Vector3f;
@@ -43,7 +51,7 @@ public class DummyGame implements IGameLogic {
     @Override
     public void init(Window window) throws Exception {
         renderer.init(window);
-        isStartMon = false;
+        isStartMon = true;
         CalendarPosit pos = new CalendarPosit();
         // 月初の曜日
         int firstDayOfWeek = pos.getStartPoint(isStartMon);
@@ -95,25 +103,32 @@ public class DummyGame implements IGameLogic {
         	// 1回目だけテクスチャを作成する
         	isCreateTexture = j == 1 ? true: false;
             for(int i = 1; i <= 7; i++) {
+            	// Cubeをループごとにずらす幅(x, y, z)
             	float xAdd = xWidth * i;
             	float yAdd = yWidth * i;
             	float zAdd = zWidth * i;
         		// 日付をインクリメント
         		box++;
             	if (isCreateTexture) {
+            		// 
             		arr.add(putOnTexturePlate(xStart + xAdd + 0.01f , yStart + yAdd - 0.03f, zStart - zAdd + 0.03f, i-1));
             	}
+            	// 描画開始の位置
            	    if (box < firstDayOfWeek) {
-           	    	System.out.println("開始: " + firstDayOfWeek);
             		continue;
             	}
+           	    // 最大日付に達した時に描画処理を抜ける
            	    day++;
             	if (day >= maxDayOfMonth) {
             		break;
             	}
             	float val = weekArr[i - 1];
+            	// val = 高さ
         		arr.add(createCube(val,
-        				cubeSize, xStart + xAdd, yStart + yAdd, zStart - zAdd));
+        				// Cube底面のサイズと位置
+        				cubeSize, xStart + xAdd, yStart + yAdd, zStart - zAdd
+        				// j=第〜週, i=曜日
+        				, j, i));
             }
         }
         // 配列の要素数を指定する
@@ -182,7 +197,7 @@ public class DummyGame implements IGameLogic {
     }
     
     /* 追加したメソッドです */
-    private GameItem createCube(float height, float cubeSize, float posX, float posY, float posZ) {
+    private GameItem createCube(float height, float cubeSize, float posX, float posY, float posZ, int week, int day_of_week) {
         // Create the Mesh
         float[] positions = new float[]{
             // VO
@@ -227,8 +242,10 @@ public class DummyGame implements IGameLogic {
             7, 6, 4, 7, 4, 5,
         };
     	Texture texture = null;
+    	String pngName = getPngName(week, day_of_week);
     	try {
         	texture = new Texture("/textures/wood1.png");
+        	
     	} catch(Exception e) {
     		e.printStackTrace();
     	}
@@ -308,4 +325,9 @@ public class DummyGame implements IGameLogic {
         }
     }
 
+    private String getPngName(int week, int day_of_week) {
+    	String png = "";
+    	
+    	return png;
+    }
 }
